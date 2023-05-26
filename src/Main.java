@@ -10,6 +10,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import static java.util.Arrays.copyOfRange;
+
 public class Main {
 
     public static byte[] stringToByteArray(String s, int bytes) {
@@ -82,7 +84,7 @@ public class Main {
             SecretKeySpec secretKey = new SecretKeySpec(stringToByteArray("0", 16), "AES");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
             byte[] aad = stringToByteArray("0", 16);
-            cipher.updateAAD(aad);
+            cipher.update(aad);
             byte[] cipherText = cipher.doFinal();
 
             if (Arrays.equals(cipherText, expected)) {
@@ -110,8 +112,35 @@ public class Main {
 
     }
 
+    public static void TestCase4() {
+        String key = "feffe9928665731c6d6a8f9467308308";
+        String iv = "cafebabefacedbaddecaf888";
+        String aad = "feedfacedeadbeeffeedfacedeadbeef" +
+                "abaddad2";
+        String ptext = "d9313225f88406e5a55909c5aff5269a" +
+            "86a7a9531534f7da2e4c303d8a318a72" +
+            "1c3c0c95956809532fcf0e2449a6b525" + "b16aedf5aa0de657ba637b39";
+        String icv = "5bc94fbc3221a5db94fae95ae7121a47";
+
+        GcmCryptoRequest req = new GcmCryptoRequest(key, iv, aad, ptext);
+        byte[] result = req.getResult();
+        byte[] receivedIcv = copyOfRange(result, result.length-16, result.length);
+        byte[] expectedIcv = stringToByteArray(icv, 16);
+
+        if (Arrays.equals(receivedIcv, expectedIcv)) {
+            System.out.println("Vectors compared OK");
+        } else {
+            System.out.println("Vectors compared failed");
+            System.out.print("Expected:");
+            printByteArray(expectedIcv);
+            System.out.print("Received:");
+            printByteArray(receivedIcv);
+        }
+    }
+
     public static void main(String[] args) {
         TestCase1();
         TestCase2();
+        TestCase4();
     }
 }
